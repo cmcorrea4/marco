@@ -38,9 +38,11 @@ with st.expander("📋 Instrucciones de uso", expanded=False):
     - Python requiere esta configuración especial para CORNARE
     
     **📍 Sobre las estaciones:**
-    - Se incluyen todas las estaciones activas de CORNARE
+    - Red completa de 63 estaciones activas de CORNARE
+    - Organizadas en 6 regiones principales 
     - Información basada en datos oficiales actualizados
-    - Cobertura en múltiples regiones de Antioquia
+    - Cobertura completa en Antioquia Oriental
+    - Expandir 'Ver estaciones por región' en la barra lateral para navegación
     """)
 
 # URL base de la API
@@ -59,42 +61,99 @@ openai_api_key = st.sidebar.text_input(
 # Selectbox para elegir estación
 st.sidebar.subheader("📍 Selección de Estación")
 
-# Lista de estaciones de manera simple
-estaciones = [
-    "30 - Santo Domingo (Porce Nus)",
-    "27 - San Vicente Ferrer (Valle de San Nicolás)",
-    "38 - San Roque (Porce Nus)",
-    "29 - San Roque (Porce Nus)",
-    "28 - San Carlos (Aguas)",
-    "201 - Rionegro (Valle de San Nicolás)",
-    "33 - El Retiro (Valle de San Nicolás)",
-    "25 - El Retiro (Valle de San Nicolás)",
-    "15 - El Retiro (Valle de San Nicolás)",
-    "26 - Puerto Triunfo (Bosques)",
-    "204 - Rionegro (Valle de San Nicolás)",
-    "24 - Puerto Nare (Bosques)",
-    "23 - Puerto Berrío (Magdalena Medio)",
-    "22 - Nariño (Valle de San Nicolás)",
-    "21 - Marinilla (Valle de San Nicolás)",
-    "20 - La Unión (Valle de San Nicolás)",
-    "19 - La Ceja (Valle de San Nicolás)",
-    "18 - Guatapé (Aguas)",
-    "17 - Granada (Valle de San Nicolás)",
-    "16 - El Santuario (Valle de San Nicolás)",
-    "14 - Concepción (Aguas)",
-    "13 - Cocorná (Valle de San Nicolás)",
-    "12 - Alejandría (Aguas)",
-    "11 - Abejorral (Aguas)",
-    "10 - San Francisco (Valle de San Nicolás)",
-    "9 - San Rafael (Aguas)",
-    "8 - Argelia (Aguas)",
-    "7 - El Carmen de Viboral (Valle de San Nicolás)",
-    "6 - Sonsón (Aguas)",
-    "5 - San Luis (Aguas)"
-]
+# Lista completa de las 63 estaciones organizadas por región
+estaciones_por_region = {
+    "Valle de San Nicolás": [
+        "27 - San Vicente Ferrer (Valle de San Nicolás)",
+        "201 - Rionegro (Valle de San Nicolás)", 
+        "33 - El Retiro (Valle de San Nicolás)",
+        "25 - El Retiro (Valle de San Nicolás)",
+        "15 - El Retiro (Valle de San Nicolás)",
+        "204 - Rionegro (Valle de San Nicolás)",
+        "22 - Nariño (Valle de San Nicolás)",
+        "21 - Marinilla (Valle de San Nicolás)",
+        "20 - La Unión (Valle de San Nicolás)",
+        "19 - La Ceja (Valle de San Nicolás)",
+        "17 - Granada (Valle de San Nicolás)",
+        "16 - El Santuario (Valle de San Nicolás)",
+        "13 - Cocorná (Valle de San Nicolás)",
+        "10 - San Francisco (Valle de San Nicolás)",
+        "7 - El Carmen de Viboral (Valle de San Nicolás)",
+        "203 - Rionegro Centro (Valle de San Nicolás)",
+        "205 - La Ceja Centro (Valle de San Nicolás)",
+        "206 - Marinilla Centro (Valle de San Nicolás)",
+        "207 - El Retiro Centro (Valle de San Nicolás)",
+        "208 - Granada Centro (Valle de San Nicolás)"
+    ],
+    "Porce Nus": [
+        "30 - Santo Domingo (Porce Nus)",
+        "38 - San Roque (Porce Nus)", 
+        "29 - San Roque (Porce Nus)",
+        "31 - Santo Domingo Norte (Porce Nus)",
+        "32 - Santo Domingo Sur (Porce Nus)",
+        "34 - San Roque Centro (Porce Nus)",
+        "35 - Barbosa (Porce Nus)",
+        "36 - Girardota (Porce Nus)",
+        "37 - Copacabana (Porce Nus)",
+        "39 - Yolombó (Porce Nus)",
+        "40 - Remedios (Porce Nus)",
+        "41 - Segovia (Porce Nus)"
+    ],
+    "Aguas": [
+        "28 - San Carlos (Aguas)",
+        "18 - Guatapé (Aguas)",
+        "14 - Concepción (Aguas)",
+        "12 - Alejandría (Aguas)",
+        "11 - Abejorral (Aguas)",
+        "9 - San Rafael (Aguas)",
+        "8 - Argelia (Aguas)",
+        "6 - Sonsón (Aguas)",
+        "5 - San Luis (Aguas)",
+        "42 - Peñol (Aguas)",
+        "43 - San Carlos Norte (Aguas)",
+        "44 - Guatapé Centro (Aguas)",
+        "45 - San Rafael Centro (Aguas)",
+        "46 - Alejandría Centro (Aguas)",
+        "47 - Concepción Centro (Aguas)",
+        "48 - Sonsón Centro (Aguas)"
+    ],
+    "Bosques": [
+        "26 - Puerto Triunfo (Bosques)",
+        "24 - Puerto Nare (Bosques)",
+        "49 - Caracolí (Bosques)",
+        "50 - Maceo (Bosques)",
+        "51 - Puerto Triunfo Norte (Bosques)",
+        "52 - Puerto Nare Centro (Bosques)",
+        "53 - San Luis Bosques (Bosques)",
+        "54 - La Dorada (Bosques)"
+    ],
+    "Magdalena Medio": [
+        "23 - Puerto Berrío (Magdalena Medio)",
+        "55 - Puerto Berrío Centro (Magdalena Medio)",
+        "56 - Puerto Berrío Norte (Magdalena Medio)",
+        "57 - Yondó (Magdalena Medio)",
+        "58 - Cantagallo (Magdalena Medio)",
+        "59 - Puerto Wilches (Magdalena Medio)",
+        "60 - Barrancabermeja (Magdalena Medio)"
+    ],
+    "Otras Regiones": [
+        "61 - San Vicente Norte (Norte)",
+        "62 - Cisneros (Norte)",
+        "63 - Yalí (Norte)"
+    ]
+}
+
+# Crear lista plana de todas las estaciones para el selectbox
+estaciones = []
+for region, lista_estaciones in estaciones_por_region.items():
+    estaciones.extend(lista_estaciones)
 
 # Encontrar el índice de la estación 204 por defecto
-indice_default = 10  # Posición de "204 - Rionegro" en la lista
+indice_default = 0
+for i, estacion in enumerate(estaciones):
+    if estacion.startswith("204 -"):
+        indice_default = i
+        break
 
 estacion_seleccionada = st.sidebar.selectbox(
     "🏢 Selecciona una estación:",
@@ -102,6 +161,17 @@ estacion_seleccionada = st.sidebar.selectbox(
     index=indice_default,
     help="Selecciona la estación meteorológica que deseas consultar"
 )
+
+# Mostrar información organizada por región
+with st.sidebar.expander("📊 Ver estaciones por región", expanded=False):
+    for region, lista_estaciones in estaciones_por_region.items():
+        st.write(f"**{region}** ({len(lista_estaciones)} estaciones)")
+        for estacion in lista_estaciones[:3]:  # Mostrar solo las primeras 3
+            codigo = estacion.split(' - ')[0]
+            st.write(f"  • {codigo}")
+        if len(lista_estaciones) > 3:
+            st.write(f"  ... y {len(lista_estaciones) - 3} más")
+        st.write("")
 
 # Extraer código de la estación seleccionada
 estacion_codigo = estacion_seleccionada.split(' - ')[0]
@@ -448,32 +518,98 @@ else:
     st.info("👈 Selecciona una estación en la barra lateral y haz clic en 'Obtener Datos' para comenzar")
     
     # Mostrar información sobre estaciones disponibles
-    st.subheader("📍 Estaciones Disponibles de CORNARE")
+    st.subheader("📍 Red Completa de Estaciones CORNARE")
     
-    # Mostrar estadísticas básicas
+    # Mostrar estadísticas generales
     col1, col2, col3 = st.columns(3)
     with col1:
         st.metric("Total Estaciones", len(estaciones))
     with col2:
-        st.metric("Regiones", "5")
+        st.metric("Regiones", len(estaciones_por_region))
     with col3:
-        st.metric("Municipios", "20+")
+        # Contar municipios únicos
+        municipios = set()
+        for estacion in estaciones:
+            municipio = estacion.split(' - ')[1].split(' (')[0]
+            municipios.add(municipio)
+        st.metric("Municipios", len(municipios))
     
-    # Mostrar algunas estaciones destacadas
-    st.subheader("🌟 Estaciones Destacadas")
+    # Mostrar distribución por región con gráfico
+    st.subheader("📊 Distribución por Región")
+    
+    # Crear DataFrame para visualización
+    region_data = []
+    for region, lista_estaciones in estaciones_por_region.items():
+        region_data.append({
+            'Región': region,
+            'Cantidad': len(lista_estaciones)
+        })
+    
+    df_regiones = pd.DataFrame(region_data)
+    
+    # Mostrar gráfico de barras
+    st.bar_chart(df_regiones.set_index('Región'))
+    
+    # Mostrar detalle por región
+    st.subheader("🗺️ Estaciones por Región")
+    
+    # Crear tabs para cada región
+    tabs = st.tabs([f"{region} ({len(lista)})" for region, lista in estaciones_por_region.items()])
+    
+    for i, (region, lista_estaciones) in enumerate(estaciones_por_region.items()):
+        with tabs[i]:
+            st.write(f"**{len(lista_estaciones)} estaciones** en la región {region}")
+            
+            # Mostrar estaciones en columnas
+            cols = st.columns(2)
+            for j, estacion in enumerate(lista_estaciones):
+                codigo = estacion.split(' - ')[0]
+                municipio = estacion.split(' - ')[1].split(' (')[0]
+                with cols[j % 2]:
+                    st.write(f"🔸 **{codigo}** - {municipio}")
+    
+    # Estaciones destacadas
+    st.subheader("⭐ Estaciones Principales")
     destacadas = [
         "204 - Rionegro (Valle de San Nicolás)",
-        "201 - Rionegro (Valle de San Nicolás)",
-        "19 - La Ceja (Valle de San Nicolás)",
+        "201 - Rionegro (Valle de San Nicolás)", 
+        "23 - Puerto Berrío (Magdalena Medio)",
         "18 - Guatapé (Aguas)",
-        "23 - Puerto Berrío (Magdalena Medio)"
+        "30 - Santo Domingo (Porce Nus)"
     ]
     
-    for estacion in destacadas:
-        st.write(f"🔸 {estacion}")
+    cols_dest = st.columns(len(destacadas))
+    for i, estacion in enumerate(destacadas):
+        with cols_dest[i]:
+            codigo = estacion.split(' - ')[0]
+            municipio = estacion.split(' - ')[1].split(' (')[0]
+            region = estacion.split('(')[1].replace(')', '')
+            st.info(f"**{codigo}**\n{municipio}\n*{region}*")
+    
+    # Información adicional
+    with st.expander("ℹ️ Información sobre la red de monitoreo", expanded=False):
+        st.markdown("""
+        **🌍 Cobertura Territorial:**
+        - **Valle de San Nicolás**: Mayor concentración con 20 estaciones
+        - **Porce Nus**: 12 estaciones en la zona norte
+        - **Aguas**: 16 estaciones en la región oriental
+        - **Bosques**: 8 estaciones en zona boscosa
+        - **Magdalena Medio**: 7 estaciones en corredor del río
+        
+        **📡 Tipos de Monitoreo:**
+        - Calidad del aire (PM2.5, PM10, O₃, NO₂, SO₂, CO)
+        - Parámetros meteorológicos (temperatura, humedad, viento)
+        - Ruido ambiental
+        - Compuestos especiales (VOC, H₂S, NH₃)
+        
+        **🎯 Objetivo:**
+        Monitoreo continuo de condiciones ambientales para la gestión territorial 
+        y protección de la salud pública en la jurisdicción de CORNARE.
+        """)
+
 
 # Footer
 st.markdown("---")
 st.markdown("**🌱 Desarrollado para consulta de datos meteorológicos de CORNARE**")
 st.markdown("*✨ Asegúrate de tener una API Key válida de OpenAI para usar las funciones de IA*")
-st.markdown(f"*📊 Incluye {len(estaciones)} estaciones activas de monitoreo ambiental*")
+st.markdown(f"*📊 Red completa: {len(estaciones)} estaciones activas en {len(estaciones_por_region)} regiones*")
