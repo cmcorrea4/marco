@@ -20,6 +20,23 @@ st.set_page_config(
 st.title("🌡️ Consulta de Estaciones Meteorológicas CORNARE")
 st.markdown("Consulta datos de estaciones y haz preguntas usando IA")
 
+# Instrucciones importantes
+with st.expander("📋 Instrucciones de uso", expanded=False):
+    st.markdown("""
+    **🚀 Pasos para usar la aplicación:**
+    
+    1. **Configura tu API Key de OpenAI** en la barra lateral
+    2. **Deja desmarcado "Verificar certificado SSL"** (recomendado)
+    3. **Ingresa el ID de estación** (por defecto: 204)
+    4. **Haz clic en "Obtener Datos de Estación"**
+    5. **Haz preguntas** sobre los datos usando IA
+    
+    **⚠️ Si ves errores SSL:**
+    - Asegúrate de que "Verificar certificado SSL" esté **desmarcado**
+    - La API funciona correctamente desde navegador
+    - Python requiere esta configuración especial para CORNARE
+    """)
+
 # Sidebar para configuración
 st.sidebar.header("⚙️ Configuración")
 
@@ -45,45 +62,59 @@ verificar_ssl = st.sidebar.checkbox(
 )
 
 if not verificar_ssl:
-    st.sidebar.warning("⚠️ Verificación SSL deshabilitada (solo para desarrollo)")
+    st.sidebar.success("✅ SSL deshabilitado - Debería funcionar correctamente")
+else:
+    st.sidebar.info("🔒 SSL habilitado - Si hay errores, desmarca la opción")
 
 # URL base de la API
-API_BASE_URL = "https://marco.cornare.gov.co/api/v1/estaciones"
+API_BASE_URL = st.sidebar.selectbox(
+    "🌐 Protocolo de conexión:",
+    ["https://marco.cornare.gov.co/api/v1/estaciones", 
+     "http://marco.cornare.gov.co/api/v1/estaciones"],
+    help="Si HTTPS falla, prueba con HTTP"
+)
 
 def obtener_datos_estacion(id_estacion, verificar_ssl=False):
     """Obtiene los datos de una estación específica"""
     try:
         url = f"{API_BASE_URL}/{id_estacion}"
         
-        # Headers para mejorar compatibilidad
+        # Headers para mejorar compatibilidad (similares al navegador)
         headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-            'Accept': 'application/json',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'application/json, text/plain, */*',
             'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
             'Accept-Encoding': 'gzip, deflate, br',
             'Connection': 'keep-alive',
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache',
         }
         
-        # Realizar request 
+        # Realizar request con configuración específica
         response = requests.get(
             url, 
             headers=headers,
-            timeout=15,
-            verify=verificar_ssl  # Usar el valor del checkbox
+            timeout=20,
+            verify=verificar_ssl,  # Usar el valor del checkbox
+            allow_redirects=True
         )
         
         if response.status_code == 200:
-            return response.json(), None
+            try:
+                return response.json(), None
+            except json.JSONDecodeError as e:
+                return None, f"Error al decodificar JSON: {str(e)}"
         else:
-            return None, f"Error HTTP {response.status_code}: {response.text}"
+            return None, f"Error HTTP {response.status_code}: {response.text[:200]}"
+            
     except requests.exceptions.SSLError as e:
-        return None, f"Error SSL: {str(e)}. Intenta deshabilitar la verificación SSL en la barra lateral."
+        return None, f"Error SSL: {str(e)}. ✅ SOLUCIÓN: Desmarca 'Verificar certificado SSL' en la barra lateral."
     except requests.exceptions.ConnectionError as e:
         return None, f"Error de conexión: {str(e)}. Verifica tu conexión a internet."
     except requests.exceptions.Timeout as e:
         return None, f"Timeout: La API tardó demasiado en responder. {str(e)}"
     except requests.exceptions.RequestException as e:
-        return None, f"Error de conexión: {str(e)}"
+        return None, f"Error de request: {str(e)}"
     except Exception as e:
         return None, f"Error inesperado: {str(e)}"
 
