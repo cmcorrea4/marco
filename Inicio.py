@@ -43,6 +43,9 @@ with st.expander("📋 Instrucciones de uso", expanded=False):
     - Cobertura en múltiples regiones de Antioquia
     """)
 
+# URL base de la API
+API_BASE_URL = "https://marco.cornare.gov.co/api/v1/estaciones"
+
 # Sidebar para configuración
 st.sidebar.header("⚙️ Configuración")
 
@@ -56,41 +59,55 @@ openai_api_key = st.sidebar.text_input(
 # Selectbox para elegir estación
 st.sidebar.subheader("📍 Selección de Estación")
 
-# Crear opciones para el selectbox de manera simple
-opciones_estaciones = []
-for est in ESTACIONES_CORNARE:
-    nombre_estacion = f"{est['codigo']} - {est['municipio']} ({est['region']})"
-    opciones_estaciones.append(nombre_estacion)
+# Lista de estaciones de manera simple
+estaciones = [
+    "30 - Santo Domingo (Porce Nus)",
+    "27 - San Vicente Ferrer (Valle de San Nicolás)",
+    "38 - San Roque (Porce Nus)",
+    "29 - San Roque (Porce Nus)",
+    "28 - San Carlos (Aguas)",
+    "201 - Rionegro (Valle de San Nicolás)",
+    "33 - El Retiro (Valle de San Nicolás)",
+    "25 - El Retiro (Valle de San Nicolás)",
+    "15 - El Retiro (Valle de San Nicolás)",
+    "26 - Puerto Triunfo (Bosques)",
+    "204 - Rionegro (Valle de San Nicolás)",
+    "24 - Puerto Nare (Bosques)",
+    "23 - Puerto Berrío (Magdalena Medio)",
+    "22 - Nariño (Valle de San Nicolás)",
+    "21 - Marinilla (Valle de San Nicolás)",
+    "20 - La Unión (Valle de San Nicolás)",
+    "19 - La Ceja (Valle de San Nicolás)",
+    "18 - Guatapé (Aguas)",
+    "17 - Granada (Valle de San Nicolás)",
+    "16 - El Santuario (Valle de San Nicolás)",
+    "14 - Concepción (Aguas)",
+    "13 - Cocorná (Valle de San Nicolás)",
+    "12 - Alejandría (Aguas)",
+    "11 - Abejorral (Aguas)",
+    "10 - San Francisco (Valle de San Nicolás)",
+    "9 - San Rafael (Aguas)",
+    "8 - Argelia (Aguas)",
+    "7 - El Carmen de Viboral (Valle de San Nicolás)",
+    "6 - Sonsón (Aguas)",
+    "5 - San Luis (Aguas)"
+]
 
 # Encontrar el índice de la estación 204 por defecto
-indice_default = 0
-for i, estacion in enumerate(ESTACIONES_CORNARE):
-    if estacion['codigo'] == 204:
-        indice_default = i
-        break
+indice_default = 10  # Posición de "204 - Rionegro" en la lista
 
-estacion_seleccionada_str = st.sidebar.selectbox(
+estacion_seleccionada = st.sidebar.selectbox(
     "🏢 Selecciona una estación:",
-    opciones_estaciones,
+    estaciones,
     index=indice_default,
     help="Selecciona la estación meteorológica que deseas consultar"
 )
 
 # Extraer código de la estación seleccionada
-try:
-    estacion_codigo = estacion_seleccionada_str.split(' - ')[0]
-    estacion_info = None
-    for estacion in ESTACIONES_CORNARE:
-        if str(estacion['codigo']) == str(estacion_codigo):
-            estacion_info = estacion
-            break
-except:
-    estacion_codigo = "204"
-    estacion_info = {"codigo": 204, "municipio": "Rionegro", "region": "Valle de San Nicolás"}
+estacion_codigo = estacion_seleccionada.split(' - ')[0]
 
 # Mostrar información de la estación seleccionada
-if estacion_info:
-    st.sidebar.info(f"📍 **{estacion_info['municipio']}**\n\nRegión: {estacion_info['region']}")
+st.sidebar.info(f"📍 **Estación seleccionada:** {estacion_codigo}")
 
 # Opción para verificación SSL
 verificar_ssl = st.sidebar.checkbox(
@@ -103,14 +120,6 @@ if not verificar_ssl:
     st.sidebar.success("✅ SSL deshabilitado - Debería funcionar correctamente")
 else:
     st.sidebar.info("🔒 SSL habilitado - Si hay errores, desmarca la opción")
-
-# URL base de la API
-API_BASE_URL = st.sidebar.selectbox(
-    "🌐 Protocolo de conexión:",
-    ["https://marco.cornare.gov.co/api/v1/estaciones", 
-     "http://marco.cornare.gov.co/api/v1/estaciones"],
-    help="Si HTTPS falla, prueba con HTTP"
-)
 
 def obtener_datos_estacion(codigo_estacion, verificar_ssl=False):
     """Obtiene los datos de una estación específica"""
@@ -257,7 +266,6 @@ if st.sidebar.button("🔄 Obtener Datos de Estación", type="primary"):
         if datos:
             st.session_state['datos_estacion'] = datos
             st.session_state['estacion_codigo'] = estacion_codigo
-            st.session_state['estacion_info'] = estacion_info
             st.session_state['timestamp_consulta'] = timestamp_consulta
             st.success(f"✅ Datos obtenidos exitosamente para la estación {estacion_codigo}")
             st.info(f"🕐 Consultado el: {timestamp_consulta.strftime('%Y-%m-%d %H:%M:%S')}")
@@ -269,7 +277,6 @@ if st.sidebar.button("🔄 Obtener Datos de Estación", type="primary"):
 # Mostrar datos si están disponibles
 if 'datos_estacion' in st.session_state:
     datos = st.session_state['datos_estacion']
-    estacion_info = st.session_state.get('estacion_info', {})
     timestamp_consulta = st.session_state.get('timestamp_consulta', datetime.now())
     
     # Mostrar información de consulta
@@ -285,15 +292,8 @@ if 'datos_estacion' in st.session_state:
     with col1:
         st.header("📊 Información de la Estación")
         
-        # Información básica con datos del CSV y de la API
+        # Información básica
         st.subheader("ℹ️ Datos Generales")
-        
-        # Información del CSV (si está disponible)
-        if estacion_info:
-            st.write(f"**Estación:** {estacion_info['codigo']} - {estacion_info['municipio']}")
-            st.write(f"**Región:** {estacion_info['region']}")
-        
-        # Información de la API
         st.write(f"**ID API:** {datos.get('id', 'N/A')}")
         st.write(f"**Código API:** {datos.get('codigo', 'N/A')}")
         st.write(f"**Ubicación:** {datos.get('ubicacion_campo', 'N/A')}")
@@ -450,39 +450,30 @@ else:
     # Mostrar información sobre estaciones disponibles
     st.subheader("📍 Estaciones Disponibles de CORNARE")
     
-    # Crear DataFrame con información de estaciones
-    df_estaciones = pd.DataFrame(ESTACIONES_CORNARE)
-    df_estaciones['Estación'] = df_estaciones.apply(lambda x: f"{x['codigo']} - {x['municipio']}", axis=1)
-    
-    # Mostrar estadísticas
+    # Mostrar estadísticas básicas
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.metric("Total Estaciones", len(ESTACIONES_CORNARE))
+        st.metric("Total Estaciones", len(estaciones))
     with col2:
-        regiones_unicas = df_estaciones['region'].nunique()
-        st.metric("Regiones", regiones_unicas)
+        st.metric("Regiones", "5")
     with col3:
-        municipios_unicos = df_estaciones['municipio'].nunique()
-        st.metric("Municipios", municipios_unicos)
+        st.metric("Municipios", "20+")
     
-    # Mostrar distribución por región
-    st.subheader("📊 Distribución por Región")
-    region_counts = df_estaciones['region'].value_counts()
-    st.bar_chart(region_counts)
+    # Mostrar algunas estaciones destacadas
+    st.subheader("🌟 Estaciones Destacadas")
+    destacadas = [
+        "204 - Rionegro (Valle de San Nicolás)",
+        "201 - Rionegro (Valle de San Nicolás)",
+        "19 - La Ceja (Valle de San Nicolás)",
+        "18 - Guatapé (Aguas)",
+        "23 - Puerto Berrío (Magdalena Medio)"
+    ]
     
-    # Mostrar tabla de estaciones
-    with st.expander("🗂️ Ver todas las estaciones disponibles", expanded=False):
-        st.dataframe(
-            df_estaciones[['codigo', 'municipio', 'region']].rename(columns={
-                'codigo': 'Código',
-                'municipio': 'Municipio',
-                'region': 'Región'
-            }),
-            use_container_width=True
-        )
+    for estacion in destacadas:
+        st.write(f"🔸 {estacion}")
 
 # Footer
 st.markdown("---")
 st.markdown("**🌱 Desarrollado para consulta de datos meteorológicos de CORNARE**")
 st.markdown("*✨ Asegúrate de tener una API Key válida de OpenAI para usar las funciones de IA*")
-st.markdown(f"*📊 Incluye {len(ESTACIONES_CORNARE)} estaciones activas de monitoreo ambiental*")
+st.markdown(f"*📊 Incluye {len(estaciones)} estaciones activas de monitoreo ambiental*")
