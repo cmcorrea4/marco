@@ -173,15 +173,15 @@ estacion_seleccionada = st.sidebar.selectbox(
 )
 
 # Mostrar información organizada por región
-with st.sidebar.expander("📊 Ver estaciones por región", expanded=False):
-    for region, lista_estaciones in estaciones_por_region.items():
-        st.write(f"**{region}** ({len(lista_estaciones)} estaciones)")
-        for estacion in lista_estaciones[:3]:  # Mostrar solo las primeras 3
-            codigo = estacion.split(' - ')[0]
-            st.write(f"  • {codigo}")
-        if len(lista_estaciones) > 3:
-            st.write(f"  ... y {len(lista_estaciones) - 3} más")
-        st.write("")
+#with st.sidebar.expander("📊 Ver estaciones por región", expanded=False):
+#    for region, lista_estaciones in estaciones_por_region.items():
+#        st.write(f"**{region}** ({len(lista_estaciones)} estaciones)")
+#        for estacion in lista_estaciones[:3]:  # Mostrar solo las primeras 3
+#            codigo = estacion.split(' - ')[0]
+#            st.write(f"  • {codigo}")
+#        if len(lista_estaciones) > 3:
+#            st.write(f"  ... y {len(lista_estaciones) - 3} más")
+#        st.write("")
 
 # Extraer código de la estación seleccionada
 estacion_codigo = estacion_seleccionada.split(' - ')[0]
