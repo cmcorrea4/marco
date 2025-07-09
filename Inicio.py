@@ -25,19 +25,19 @@ st.set_page_config(
 
 # Título principal
 st.title("🌡️ Consulta de Estaciones Meteorológicas CORNARE")
-st.markdown("Consulta datos de estaciones y haz preguntas usando IA")
+st.markdown("Consulta datos de estaciones y análisis inteligente de calidad del aire")
 
 # Instrucciones importantes
 with st.expander("📋 Instrucciones de uso", expanded=False):
     st.markdown("""
     **🚀 Pasos para usar la aplicación:**
     
-    1. **Configura tu API Key de OpenAI** en la barra lateral
+    1. **Asegúrate de que las credenciales estén configuradas** (se verifica automáticamente)
     2. **Selecciona una estación** del listbox (incluye código, municipio y región)
     3. **Deja desmarcado "Verificar certificado SSL"** (recomendado)
     4. **Haz clic en "Obtener Datos de Estación"**
     5. **Revisa la fecha y hora de consulta** (mostrada en hora de Colombia COT, UTC-5)
-    6. **Haz preguntas** sobre los datos usando IA
+    6. **Haz preguntas** sobre los datos usando el asistente inteligente
     
     **⚠️ Si ves errores SSL:**
     - Asegúrate de que "Verificar certificado SSL" esté **desmarcado**
@@ -58,15 +58,15 @@ API_BASE_URL = "https://marco.cornare.gov.co/api/v1/estaciones"
 # Sidebar para configuración
 st.sidebar.header("⚙️ Configuración")
 
-# Campo para API Key de OpenAI
-openai_api_key = st.sidebar.text_input(
-    "🔑 API Key de OpenAI:",
-    type="password",
-    placeholder="sk-..."
-)
-
-#openai_api_key=key
-
+# Verificar si existe la API key en secrets
+try:
+    api_key = st.secrets["settings"]["key"]
+    st.sidebar.success("🔑 Credenciales cargadas correctamente")
+    ia_disponible = True
+except:
+    st.sidebar.error("❌ Error: No se encontraron las credenciales necesarias")
+    st.sidebar.info("💡 Configura las credenciales en los secrets de la aplicación")
+    ia_disponible = False
 
 # Selectbox para elegir estación
 st.sidebar.subheader("📍 Selección de Estación")
@@ -470,9 +470,9 @@ if 'datos_estacion' in st.session_state:
                             st.write(f"... y {len(categorias_buenas) - 5} más")
     
     with col2:
-        st.header("🤖 Consulta con IA")
+        st.header("🤖 Análisis Inteligente")
         
-        if openai_api_key:
+        if ia_disponible:
             # Campo para preguntas
             pregunta = st.text_area(
                 "💬 Haz una pregunta sobre los datos de la estación:",
@@ -480,13 +480,13 @@ if 'datos_estacion' in st.session_state:
                 height=100
             )
             
-            if st.button("🚀 Consultar IA") and pregunta:
-                with st.spinner("Consultando con IA..."):
+            if st.button("🚀 Analizar Datos") and pregunta:
+                with st.spinner("Analizando datos..."):
                     contexto = formatear_datos_para_ai(datos)
-                    respuesta, error = consultar_openai(pregunta, contexto, openai_api_key)
+                    respuesta, error = consultar_openai(pregunta, contexto, api_key)
                 
                 if respuesta:
-                    st.subheader("💡 Respuesta de IA:")
+                    st.subheader("💡 Análisis:")
                     st.write(respuesta)
                 else:
                     st.error(f"❌ {error}")
@@ -508,17 +508,18 @@ if 'datos_estacion' in st.session_state:
             
             for pregunta_sug in preguntas_sugeridas:
                 if st.button(pregunta_sug, key=f"sug_{pregunta_sug}"):
-                    with st.spinner("Consultando con IA..."):
+                    with st.spinner("Analizando datos..."):
                         contexto = formatear_datos_para_ai(datos)
-                        respuesta, error = consultar_openai(pregunta_sug, contexto, openai_api_key)
+                        respuesta, error = consultar_openai(pregunta_sug, contexto, api_key)
                     
                     if respuesta:
-                        st.subheader("💡 Respuesta de IA:")
+                        st.subheader("💡 Análisis:")
                         st.write(respuesta)
                     else:
                         st.error(f"❌ {error}")
         else:
-            st.warning("⚠️ Por favor ingresa tu API Key de OpenAI en la barra lateral para usar las funciones de IA")
+            st.warning("⚠️ Análisis inteligente no disponible: credenciales no configuradas")
+            st.info("💡 Contacta al administrador para configurar las credenciales del sistema")
     
     # Mostrar JSON raw
     with st.expander("🔍 Ver JSON completo"):
@@ -621,6 +622,6 @@ else:
 # Footer
 st.markdown("---")
 st.markdown("**🌱 Desarrollado para consulta de datos meteorológicos de CORNARE**")
-st.markdown("*✨ Asegúrate de tener una API Key válida de OpenAI para usar las funciones de IA*")
+st.markdown("*🤖 Incluye análisis inteligente de datos ambientales*")
 st.markdown(f"*📊 Red completa: {len(estaciones)} estaciones activas en {len(estaciones_por_region)} regiones*")
 st.markdown(f"*🕐 Todas las fechas y horas se muestran en horario de Colombia (COT, UTC-5)*")
