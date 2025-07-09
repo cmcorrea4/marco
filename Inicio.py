@@ -38,12 +38,6 @@ with st.expander("📋 Instrucciones de uso", expanded=False):
     4. **Revisa la fecha y hora de consulta** (mostrada en hora de Colombia COT, UTC-5)
     5. **Haz preguntas** sobre los datos usando el asistente inteligente
     
-    
-    **⚠️ Si ves errores SSL:**
-    - Asegúrate de que "Verificar certificado SSL" esté **desmarcado**
-    - La API funciona correctamente desde navegador
-    - Python requiere esta configuración especial para CORNARE
-    
     **📍 Sobre las estaciones:**
     - Red completa de 63 estaciones activas de CORNARE
     - Organizadas en 6 regiones principales 
