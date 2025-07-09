@@ -3,11 +3,18 @@ import requests
 import json
 from openai import OpenAI
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 import urllib3
 
 # Suprimir advertencias SSL (solo para desarrollo)
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+# Zona horaria de Colombia (UTC-5)
+COLOMBIA_TZ = timezone(timedelta(hours=-5))
+
+def obtener_hora_colombia():
+    """Obtiene la hora actual en zona horaria de Colombia (UTC-5)"""
+    return datetime.now(COLOMBIA_TZ)
 
 # Configuración de la página
 st.set_page_config(
@@ -29,7 +36,7 @@ with st.expander("📋 Instrucciones de uso", expanded=False):
     2. **Selecciona una estación** del listbox (incluye código, municipio y región)
     3. **Deja desmarcado "Verificar certificado SSL"** (recomendado)
     4. **Haz clic en "Obtener Datos de Estación"**
-    5. **Revisa la fecha y hora de consulta** mostrada
+    5. **Revisa la fecha y hora de consulta** (mostrada en hora de Colombia COT, UTC-5)
     6. **Haz preguntas** sobre los datos usando IA
     
     **⚠️ Si ves errores SSL:**
@@ -329,8 +336,8 @@ def consultar_openai(prompt, contexto, api_key):
 if st.sidebar.button("🔄 Obtener Datos de Estación", type="primary"):
     if estacion_codigo:
         with st.spinner("Obteniendo datos de la estación..."):
-            # Registrar timestamp de consulta
-            timestamp_consulta = datetime.now()
+            # Registrar timestamp de consulta en hora de Colombia
+            timestamp_consulta = obtener_hora_colombia()
             datos, error = obtener_datos_estacion(estacion_codigo, verificar_ssl)
             
         if datos:
@@ -338,7 +345,7 @@ if st.sidebar.button("🔄 Obtener Datos de Estación", type="primary"):
             st.session_state['estacion_codigo'] = estacion_codigo
             st.session_state['timestamp_consulta'] = timestamp_consulta
             st.success(f"✅ Datos obtenidos exitosamente para la estación {estacion_codigo}")
-            st.info(f"🕐 Consultado el: {timestamp_consulta.strftime('%Y-%m-%d %H:%M:%S')}")
+            st.info(f"🕐 Consultado el: {timestamp_consulta.strftime('%Y-%m-%d %H:%M:%S')} (Hora Colombia UTC-5)")
         else:
             st.error(f"❌ {error}")
     else:
@@ -347,14 +354,14 @@ if st.sidebar.button("🔄 Obtener Datos de Estación", type="primary"):
 # Mostrar datos si están disponibles
 if 'datos_estacion' in st.session_state:
     datos = st.session_state['datos_estacion']
-    timestamp_consulta = st.session_state.get('timestamp_consulta', datetime.now())
+    timestamp_consulta = st.session_state.get('timestamp_consulta', obtener_hora_colombia())
     
     # Mostrar información de consulta
     col_info1, col_info2 = st.columns([2, 1])
     with col_info1:
         st.success(f"📊 **Datos de la Estación {datos.get('codigo', 'N/A')}**")
     with col_info2:
-        st.info(f"🕐 **Consultado:** {timestamp_consulta.strftime('%Y-%m-%d %H:%M:%S')}")
+        st.info(f"🕐 **Consultado:** {timestamp_consulta.strftime('%Y-%m-%d %H:%M:%S')} COT")
     
     # Crear dos columnas
     col1, col2 = st.columns([1, 1])
@@ -613,3 +620,4 @@ st.markdown("---")
 st.markdown("**🌱 Desarrollado para consulta de datos meteorológicos de CORNARE**")
 st.markdown("*✨ Asegúrate de tener una API Key válida de OpenAI para usar las funciones de IA*")
 st.markdown(f"*📊 Red completa: {len(estaciones)} estaciones activas en {len(estaciones_por_region)} regiones*")
+st.markdown(f"*🕐 Todas las fechas y horas se muestran en horario de Colombia (COT, UTC-5)*")
