@@ -34,10 +34,10 @@ with st.expander("📋 Instrucciones de uso", expanded=False):
     
     1. **Asegúrate de que las credenciales estén configuradas** (se verifica automáticamente)
     2. **Selecciona una estación** del listbox (incluye código, municipio y región)
-    3. **Deja desmarcado "Verificar certificado SSL"** (recomendado)
-    4. **Haz clic en "Obtener Datos de Estación"**
-    5. **Revisa la fecha y hora de consulta** (mostrada en hora de Colombia COT, UTC-5)
-    6. **Haz preguntas** sobre los datos usando el asistente inteligente
+    3. **Haz clic en "Obtener Datos de Estación"**
+    4. **Revisa la fecha y hora de consulta** (mostrada en hora de Colombia COT, UTC-5)
+    5. **Haz preguntas** sobre los datos usando el asistente inteligente
+    
     
     **⚠️ Si ves errores SSL:**
     - Asegúrate de que "Verificar certificado SSL" esté **desmarcado**
