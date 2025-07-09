@@ -4,6 +4,10 @@ import json
 from openai import OpenAI
 import pandas as pd
 from datetime import datetime
+import urllib3
+
+# Suprimir advertencias SSL (solo para desarrollo)
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # Configuración de la página
 st.set_page_config(
@@ -33,21 +37,55 @@ estacion_id = st.sidebar.text_input(
     placeholder="Ej: 204"
 )
 
+# Opción para verificación SSL
+verificar_ssl = st.sidebar.checkbox(
+    "🔒 Verificar certificado SSL",
+    value=False,
+    help="Desmarca si tienes problemas de conexión SSL"
+)
+
+if not verificar_ssl:
+    st.sidebar.warning("⚠️ Verificación SSL deshabilitada (solo para desarrollo)")
+
 # URL base de la API
 API_BASE_URL = "https://marco.cornare.gov.co/api/v1/estaciones"
 
-def obtener_datos_estacion(id_estacion):
+def obtener_datos_estacion(id_estacion, verificar_ssl=False):
     """Obtiene los datos de una estación específica"""
     try:
         url = f"{API_BASE_URL}/{id_estacion}"
-        response = requests.get(url, timeout=10)
+        
+        # Headers para mejorar compatibilidad
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'Accept': 'application/json',
+            'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Connection': 'keep-alive',
+        }
+        
+        # Realizar request 
+        response = requests.get(
+            url, 
+            headers=headers,
+            timeout=15,
+            verify=verificar_ssl  # Usar el valor del checkbox
+        )
         
         if response.status_code == 200:
             return response.json(), None
         else:
             return None, f"Error HTTP {response.status_code}: {response.text}"
+    except requests.exceptions.SSLError as e:
+        return None, f"Error SSL: {str(e)}. Intenta deshabilitar la verificación SSL en la barra lateral."
+    except requests.exceptions.ConnectionError as e:
+        return None, f"Error de conexión: {str(e)}. Verifica tu conexión a internet."
+    except requests.exceptions.Timeout as e:
+        return None, f"Timeout: La API tardó demasiado en responder. {str(e)}"
     except requests.exceptions.RequestException as e:
         return None, f"Error de conexión: {str(e)}"
+    except Exception as e:
+        return None, f"Error inesperado: {str(e)}"
 
 def formatear_datos_para_ai(datos_json):
     """Formatea los datos JSON para enviar a OpenAI"""
@@ -143,7 +181,7 @@ def consultar_openai(prompt, contexto, api_key):
 if st.sidebar.button("🔄 Obtener Datos de Estación", type="primary"):
     if estacion_id:
         with st.spinner("Obteniendo datos de la estación..."):
-            datos, error = obtener_datos_estacion(estacion_id)
+            datos, error = obtener_datos_estacion(estacion_id, verificar_ssl)
             
         if datos:
             st.session_state['datos_estacion'] = datos
