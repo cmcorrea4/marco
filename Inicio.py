@@ -56,8 +56,11 @@ openai_api_key = st.sidebar.text_input(
 # Selectbox para elegir estación
 st.sidebar.subheader("📍 Selección de Estación")
 
-# Crear opciones para el selectbox usando la lista fija
-opciones_estaciones = [formatear_nombre_estacion(est) for est in ESTACIONES_CORNARE]
+# Crear opciones para el selectbox de manera simple
+opciones_estaciones = []
+for est in ESTACIONES_CORNARE:
+    nombre_estacion = f"{est['codigo']} - {est['municipio']} ({est['region']})"
+    opciones_estaciones.append(nombre_estacion)
 
 # Encontrar el índice de la estación 204 por defecto
 indice_default = 0
@@ -74,8 +77,16 @@ estacion_seleccionada_str = st.sidebar.selectbox(
 )
 
 # Extraer código de la estación seleccionada
-estacion_codigo = estacion_seleccionada_str.split(' - ')[0]
-estacion_info = obtener_estacion_por_codigo(estacion_codigo, ESTACIONES_CORNARE)
+try:
+    estacion_codigo = estacion_seleccionada_str.split(' - ')[0]
+    estacion_info = None
+    for estacion in ESTACIONES_CORNARE:
+        if str(estacion['codigo']) == str(estacion_codigo):
+            estacion_info = estacion
+            break
+except:
+    estacion_codigo = "204"
+    estacion_info = {"codigo": 204, "municipio": "Rionegro", "region": "Valle de San Nicolás"}
 
 # Mostrar información de la estación seleccionada
 if estacion_info:
