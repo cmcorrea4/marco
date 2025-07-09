@@ -5,6 +5,8 @@ from openai import OpenAI
 import pandas as pd
 from datetime import datetime
 import urllib3
+import csv
+import io
 
 # Suprimir advertencias SSL (solo para desarrollo)
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -26,15 +28,21 @@ with st.expander("📋 Instrucciones de uso", expanded=False):
     **🚀 Pasos para usar la aplicación:**
     
     1. **Configura tu API Key de OpenAI** en la barra lateral
-    2. **Deja desmarcado "Verificar certificado SSL"** (recomendado)
-    3. **Ingresa el ID de estación** (por defecto: 204)
+    2. **Selecciona una estación** del listbox (incluye código, municipio y región)
+    3. **Deja desmarcado "Verificar certificado SSL"** (recomendado)
     4. **Haz clic en "Obtener Datos de Estación"**
-    5. **Haz preguntas** sobre los datos usando IA
+    5. **Revisa la fecha y hora de consulta** mostrada
+    6. **Haz preguntas** sobre los datos usando IA
     
     **⚠️ Si ves errores SSL:**
     - Asegúrate de que "Verificar certificado SSL" esté **desmarcado**
     - La API funciona correctamente desde navegador
     - Python requiere esta configuración especial para CORNARE
+    
+    **📍 Sobre las estaciones:**
+    - Se incluyen todas las estaciones activas de CORNARE
+    - Información basada en datos oficiales actualizados
+    - Cobertura en múltiples regiones de Antioquia
     """)
 
 # Sidebar para configuración
@@ -47,12 +55,36 @@ openai_api_key = st.sidebar.text_input(
     placeholder="sk-..."
 )
 
-# Campo para ID de estación
-estacion_id = st.sidebar.text_input(
-    "🏢 ID de Estación:",
-    value="204",
-    placeholder="Ej: 204"
+# Cargar lista de estaciones
+estaciones_disponibles = cargar_estaciones_desde_csv()
+
+# Selectbox para elegir estación
+st.sidebar.subheader("📍 Selección de Estación")
+
+# Crear opciones para el selectbox
+opciones_estaciones = [formatear_nombre_estacion(est) for est in estaciones_disponibles]
+
+# Encontrar el índice de la estación 204 por defecto
+indice_default = 0
+for i, estacion in enumerate(estaciones_disponibles):
+    if estacion['codigo'] == 204:
+        indice_default = i
+        break
+
+estacion_seleccionada_str = st.sidebar.selectbox(
+    "🏢 Selecciona una estación:",
+    opciones_estaciones,
+    index=indice_default,
+    help="Selecciona la estación meteorológica que deseas consultar"
 )
+
+# Extraer código de la estación seleccionada
+estacion_codigo = estacion_seleccionada_str.split(' - ')[0]
+estacion_info = obtener_estacion_por_codigo(estacion_codigo, estaciones_disponibles)
+
+# Mostrar información de la estación seleccionada
+if estacion_info:
+    st.sidebar.info(f"📍 **{estacion_info['municipio']}**\n\nRegión: {estacion_info['region']}")
 
 # Opción para verificación SSL
 verificar_ssl = st.sidebar.checkbox(
@@ -74,10 +106,10 @@ API_BASE_URL = st.sidebar.selectbox(
     help="Si HTTPS falla, prueba con HTTP"
 )
 
-def obtener_datos_estacion(id_estacion, verificar_ssl=False):
+def obtener_datos_estacion(codigo_estacion, verificar_ssl=False):
     """Obtiene los datos de una estación específica"""
     try:
-        url = f"{API_BASE_URL}/{id_estacion}"
+        url = f"{API_BASE_URL}/{codigo_estacion}"
         
         # Headers para mejorar compatibilidad (similares al navegador)
         headers = {
@@ -210,22 +242,36 @@ def consultar_openai(prompt, contexto, api_key):
 
 # Botón para obtener datos
 if st.sidebar.button("🔄 Obtener Datos de Estación", type="primary"):
-    if estacion_id:
+    if estacion_codigo:
         with st.spinner("Obteniendo datos de la estación..."):
-            datos, error = obtener_datos_estacion(estacion_id, verificar_ssl)
+            # Registrar timestamp de consulta
+            timestamp_consulta = datetime.now()
+            datos, error = obtener_datos_estacion(estacion_codigo, verificar_ssl)
             
         if datos:
             st.session_state['datos_estacion'] = datos
-            st.session_state['estacion_id'] = estacion_id
-            st.success(f"✅ Datos obtenidos exitosamente para la estación {estacion_id}")
+            st.session_state['estacion_codigo'] = estacion_codigo
+            st.session_state['estacion_info'] = estacion_info
+            st.session_state['timestamp_consulta'] = timestamp_consulta
+            st.success(f"✅ Datos obtenidos exitosamente para la estación {estacion_codigo}")
+            st.info(f"🕐 Consultado el: {timestamp_consulta.strftime('%Y-%m-%d %H:%M:%S')}")
         else:
             st.error(f"❌ {error}")
     else:
-        st.warning("⚠️ Por favor ingresa un ID de estación")
+        st.warning("⚠️ Por favor selecciona una estación")
 
 # Mostrar datos si están disponibles
 if 'datos_estacion' in st.session_state:
     datos = st.session_state['datos_estacion']
+    estacion_info = st.session_state.get('estacion_info', {})
+    timestamp_consulta = st.session_state.get('timestamp_consulta', datetime.now())
+    
+    # Mostrar información de consulta
+    col_info1, col_info2 = st.columns([2, 1])
+    with col_info1:
+        st.success(f"📊 **Datos de la Estación {datos.get('codigo', 'N/A')}**")
+    with col_info2:
+        st.info(f"🕐 **Consultado:** {timestamp_consulta.strftime('%Y-%m-%d %H:%M:%S')}")
     
     # Crear dos columnas
     col1, col2 = st.columns([1, 1])
@@ -233,13 +279,24 @@ if 'datos_estacion' in st.session_state:
     with col1:
         st.header("📊 Información de la Estación")
         
-        # Información básica
+        # Información básica con datos del CSV y de la API
         st.subheader("ℹ️ Datos Generales")
-        st.write(f"**ID:** {datos.get('id', 'N/A')}")
-        st.write(f"**Código:** {datos.get('codigo', 'N/A')}")
+        
+        # Información del CSV (si está disponible)
+        if estacion_info:
+            st.write(f"**Estación:** {estacion_info['codigo']} - {estacion_info['municipio']}")
+            st.write(f"**Región:** {estacion_info['region']}")
+        
+        # Información de la API
+        st.write(f"**ID API:** {datos.get('id', 'N/A')}")
+        st.write(f"**Código API:** {datos.get('codigo', 'N/A')}")
         st.write(f"**Ubicación:** {datos.get('ubicacion_campo', 'N/A')}")
         st.write(f"**Red:** {datos.get('red', 'N/A')}")
         st.write(f"**Clasificación:** {datos.get('clasificacion', 'N/A')}")
+        
+        # Información adicional
+        if datos.get('label'):
+            st.write(f"**Descripción completa:** {datos.get('label')}")
         
         # Coordenadas y mapa
         st.subheader("🗺️ Ubicación")
@@ -382,9 +439,44 @@ if 'datos_estacion' in st.session_state:
         st.json(datos)
 
 else:
-    st.info("👈 Ingresa un ID de estación en la barra lateral y haz clic en 'Obtener Datos' para comenzar")
+    st.info("👈 Selecciona una estación en la barra lateral y haz clic en 'Obtener Datos' para comenzar")
+    
+    # Mostrar información sobre estaciones disponibles
+    st.subheader("📍 Estaciones Disponibles de CORNARE")
+    
+    # Crear DataFrame con información de estaciones
+    df_estaciones = pd.DataFrame(estaciones_disponibles)
+    df_estaciones['Estación'] = df_estaciones.apply(lambda x: f"{x['codigo']} - {x['municipio']}", axis=1)
+    
+    # Mostrar estadísticas
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("Total Estaciones", len(estaciones_disponibles))
+    with col2:
+        regiones_unicas = df_estaciones['region'].nunique()
+        st.metric("Regiones", regiones_unicas)
+    with col3:
+        municipios_unicos = df_estaciones['municipio'].nunique()
+        st.metric("Municipios", municipios_unicos)
+    
+    # Mostrar distribución por región
+    st.subheader("📊 Distribución por Región")
+    region_counts = df_estaciones['region'].value_counts()
+    st.bar_chart(region_counts)
+    
+    # Mostrar tabla de estaciones
+    with st.expander("🗂️ Ver todas las estaciones disponibles", expanded=False):
+        st.dataframe(
+            df_estaciones[['codigo', 'municipio', 'region']].rename(columns={
+                'codigo': 'Código',
+                'municipio': 'Municipio',
+                'region': 'Región'
+            }),
+            use_container_width=True
+        )
 
 # Footer
 st.markdown("---")
-st.markdown("**Desarrollado para consulta de datos meteorológicos de CORNARE**")
-st.markdown("*Asegúrate de tener una API Key válida de OpenAI para usar las funciones de IA*")
+st.markdown("**🌱 Desarrollado para consulta de datos meteorológicos de CORNARE**")
+st.markdown("*✨ Asegúrate de tener una API Key válida de OpenAI para usar las funciones de IA*")
+st.markdown(f"*📊 Incluye {len(estaciones_disponibles)} estaciones activas de monitoreo ambiental*")
