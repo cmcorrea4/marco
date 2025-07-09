@@ -195,7 +195,7 @@ st.sidebar.info(f"📍 **Estación seleccionada:** {estacion_codigo}")
 #    value=False,
 #    help="Desmarca si tienes problemas de conexión SSL"
 #)
-
+verificar_ssl=False
 if not verificar_ssl:
     st.sidebar.success("✅ SSL deshabilitado - Debería funcionar correctamente")
 else:
