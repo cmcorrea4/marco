@@ -59,11 +59,14 @@ API_BASE_URL = "https://marco.cornare.gov.co/api/v1/estaciones"
 st.sidebar.header("⚙️ Configuración")
 
 # Campo para API Key de OpenAI
-openai_api_key = st.sidebar.text_input(
-    "🔑 API Key de OpenAI:",
-    type="password",
-    placeholder="sk-..."
-)
+#openai_api_key = st.sidebar.text_input(
+#    "🔑 API Key de OpenAI:",
+#    type="password",
+#    placeholder="sk-..."
+#)
+
+openai_api_key=key
+
 
 # Selectbox para elegir estación
 st.sidebar.subheader("📍 Selección de Estación")
