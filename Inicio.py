@@ -196,10 +196,10 @@ st.sidebar.info(f"📍 **Estación seleccionada:** {estacion_codigo}")
 #    help="Desmarca si tienes problemas de conexión SSL"
 #)
 
-#if not verificar_ssl:
-#    st.sidebar.success("✅ SSL deshabilitado - Debería funcionar correctamente")
-#else:
-#    st.sidebar.info("🔒 SSL habilitado - Si hay errores, desmarca la opción")
+if not verificar_ssl:
+    st.sidebar.success("✅ SSL deshabilitado - Debería funcionar correctamente")
+else:
+    st.sidebar.info("🔒 SSL habilitado - Si hay errores, desmarca la opción")
 
 def obtener_datos_estacion(codigo_estacion, verificar_ssl=False):
     """Obtiene los datos de una estación específica"""
