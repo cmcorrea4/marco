@@ -5,8 +5,6 @@ from openai import OpenAI
 import pandas as pd
 from datetime import datetime
 import urllib3
-import csv
-import io
 
 # Suprimir advertencias SSL (solo para desarrollo)
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -55,18 +53,15 @@ openai_api_key = st.sidebar.text_input(
     placeholder="sk-..."
 )
 
-# Cargar lista de estaciones
-estaciones_disponibles = cargar_estaciones_desde_csv()
-
 # Selectbox para elegir estación
 st.sidebar.subheader("📍 Selección de Estación")
 
-# Crear opciones para el selectbox
-opciones_estaciones = [formatear_nombre_estacion(est) for est in estaciones_disponibles]
+# Crear opciones para el selectbox usando la lista fija
+opciones_estaciones = [formatear_nombre_estacion(est) for est in ESTACIONES_CORNARE]
 
 # Encontrar el índice de la estación 204 por defecto
 indice_default = 0
-for i, estacion in enumerate(estaciones_disponibles):
+for i, estacion in enumerate(ESTACIONES_CORNARE):
     if estacion['codigo'] == 204:
         indice_default = i
         break
@@ -80,7 +75,7 @@ estacion_seleccionada_str = st.sidebar.selectbox(
 
 # Extraer código de la estación seleccionada
 estacion_codigo = estacion_seleccionada_str.split(' - ')[0]
-estacion_info = obtener_estacion_por_codigo(estacion_codigo, estaciones_disponibles)
+estacion_info = obtener_estacion_por_codigo(estacion_codigo, ESTACIONES_CORNARE)
 
 # Mostrar información de la estación seleccionada
 if estacion_info:
@@ -445,13 +440,13 @@ else:
     st.subheader("📍 Estaciones Disponibles de CORNARE")
     
     # Crear DataFrame con información de estaciones
-    df_estaciones = pd.DataFrame(estaciones_disponibles)
+    df_estaciones = pd.DataFrame(ESTACIONES_CORNARE)
     df_estaciones['Estación'] = df_estaciones.apply(lambda x: f"{x['codigo']} - {x['municipio']}", axis=1)
     
     # Mostrar estadísticas
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.metric("Total Estaciones", len(estaciones_disponibles))
+        st.metric("Total Estaciones", len(ESTACIONES_CORNARE))
     with col2:
         regiones_unicas = df_estaciones['region'].nunique()
         st.metric("Regiones", regiones_unicas)
@@ -479,4 +474,4 @@ else:
 st.markdown("---")
 st.markdown("**🌱 Desarrollado para consulta de datos meteorológicos de CORNARE**")
 st.markdown("*✨ Asegúrate de tener una API Key válida de OpenAI para usar las funciones de IA*")
-st.markdown(f"*📊 Incluye {len(estaciones_disponibles)} estaciones activas de monitoreo ambiental*")
+st.markdown(f"*📊 Incluye {len(ESTACIONES_CORNARE)} estaciones activas de monitoreo ambiental*")
